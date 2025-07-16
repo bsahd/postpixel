@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Pixel Art in URL</title>
+		<style>
+			h1 {
+				margin-bottom: 10px;
+				font-weight: normal;
+				font-size: 2.5em;
+			}
+			.message {
+				height: 1.5em;
+				font-size: 1.2em;
+			}
+			#controls {
+				margin-top: 10px;
+				margin-bottom: 20px;
+			}
+			#editor-column {
+				position: relative;
+			}
+			canvas {
+				border: 1px solid #1a1a1a;
+				image-rendering: pixelated;
+			}
+			#grid-canvas {
+				position: absolute;
+				top: 0;
+				left: 0;
+				background-color: transparent;
+				pointer-events: none;
+			}
+			#draw-preview {
+				width: 14px;
+				height: 14px;
+				position: absolute;
+				pointer-events: none;
+				border: 2px solid #08f;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Pixel Art in URL</h1>
+		<div id="message-container">
+			<p class="message">編集内容はURLに自動で反映されます</p>
+		</div>
+		<main>
+			<div id="controls">
+				<label for="resolution-select">解像度:</label>
+				<select id="resolution-select">
+					<option value="8x8">8x8</option>
+					<option value="16x16">16x16</option>
+					<option value="24x24">24x24</option>
+					<option value="32x32">32x32</option>
+					<option value="48x48">48x48</option>
+					<option value="64x64">64x64</option>
+					<option value="88x31">88x31</option>
+					<option value="64x16">64x16</option>
+					<option value="128x64">128x64</option>
+				</select>
+				<input type="checkbox" id="grid-toggle" checked />
+				<label for="grid-toggle">グリッド表示</label>
+				<button type="button" id="clear-button">clear</button>
+			</div>
+			<div id="editor-column">
+				<canvas id="pixel-canvas"></canvas>
+				<canvas id="grid-canvas"></canvas>
+				<div id="draw-preview"></div>
+			</div>
+			<div id="preview-column">
+				<div class="preview-box">
+					<label>1x</label> <canvas id="preview-1x"></canvas>
+				</div>
+				<div class="preview-box">
+					<label>2x</label> <canvas id="preview-2x"></canvas>
+				</div>
+			</div>
+		</main>
+
+		<script>
+			const resolutionSelect = document.getElementById("resolution-select");
+			const canvas = document.getElementById("pixel-canvas");
+			const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+			const gridCanvas = document.getElementById("grid-canvas");
+			const gridCtx = gridCanvas.getContext("2d");
+
+			const preview1x = document.getElementById("preview-1x");
+			const ctx1x = preview1x.getContext("2d");
+
+			const preview2x = document.getElementById("preview-2x");
+			const ctx2x = preview2x.getContext("2d");
+
+			const params = new URLSearchParams(window.location.search);
+			const dataParam = params.get("data");
+			const ZOOM = 16;
+
+			let isGridEnabled = true;
+
+			function updatePreviews() {
+				preview1x.width = canvas.width;
+				preview1x.height = canvas.height;
+				ctx1x.drawImage(canvas, 0, 0);
+
+				preview2x.width = canvas.width * 2;
+				preview2x.height = canvas.height * 2;
+				ctx1x.imageSmoothingEnabled = false;
+				ctx2x.imageSmoothingEnabled = false;
+				ctx2x.drawImage(
+					canvas,
+					0,
+					0,
+					canvas.width,
+					canvas.height,
+					0,
+					0,
+					canvas.width * 2,
+					canvas.height * 2,
+				);
+			}
+
+			function drawGrid() {
+				const width = canvas.width;
+				const height = canvas.height;
+				const displayWidth = width * ZOOM;
+				const displayHeight = height * ZOOM;
+				gridCanvas.width = displayWidth;
+				gridCanvas.height = displayHeight;
+				gridCtx.clearRect(0, 0, displayWidth, displayHeight);
+
+				gridCtx.strokeStyle = "rgba(128, 122, 128, 0.5)";
+				gridCtx.lineWidth = 1;
+
+				for (let i = 0; i <= width; i++) {
+					gridCtx.beginPath();
+					gridCtx.moveTo(i * ZOOM - 0.5, 0);
+					gridCtx.lineTo(i * ZOOM - 0.5, displayHeight);
+					gridCtx.stroke();
+				}
+
+				for (let i = 0; i <= height; i++) {
+					gridCtx.beginPath();
+					gridCtx.moveTo(0, i * ZOOM - 0.5);
+					gridCtx.lineTo(displayWidth, i * ZOOM - 0.5);
+					gridCtx.stroke();
+				}
+			}
+
+			function updateUrlWithCanvasData() {
+				try {
+					const dataURL = imgdata();
+					const newUrl = `${window.location.pathname}?data=${encodeURIComponent(
+						dataURL,
+					)}`;
+					history.replaceState({ path: newUrl }, "", newUrl);
+				} catch (e) {
+					console.error("URLの更新に失敗しました。", e);
+				}
+			}
+
+			function createNewCanvas(width, height) {
+				canvas.width = width;
+				canvas.height = height;
+				canvas.style.width = width * ZOOM + "px";
+				canvas.style.height = height * ZOOM + "px";
+				ctx.fillStyle = `rgba(255,255,255)`;
+				ctx.fillRect(0, 0, width, height);
+
+				const resolutionValue = `${width}x${height}`;
+				if (
+					Array.from(resolutionSelect.options).some(
+						(option) => option.value === resolutionValue,
+					)
+				) {
+					resolutionSelect.value = resolutionValue;
+				} else {
+					resolutionSelect.value = "16x16";
+				}
+				updatePreviews();
+				updateUrlWithCanvasData();
+				drawGrid();
+			}
+
+			resolutionSelect.addEventListener("change", function () {
+				if (window.confirm("キャンバスを再作成しますか?内容は失われます")) {
+					const selectedValue = this.value;
+					const parts = selectedValue.split("x");
+					const newWidth = parseInt(parts[0], 10);
+					const newHeight = parseInt(parts[1], 10);
+					createNewCanvas(newWidth, newHeight);
+				} else {
+					const loadedResolutionValue = `${canvas.width}x${canvas.height}`;
+					if (
+						Array.from(resolutionSelect.options).some(
+							(option) => option.value === loadedResolutionValue,
+						)
+					) {
+						resolutionSelect.value = loadedResolutionValue;
+					}
+				}
+			});
+
+			let lastX = -1,
+				lastY = -1;
+
+			function getCoordinates(e) {
+				const rect = canvas.getBoundingClientRect();
+				return {
+					x: Math.floor(((e.clientX - rect.left) * canvas.width) / rect.width),
+					y: Math.floor(((e.clientY - rect.top) * canvas.height) / rect.height),
+				};
+			}
+
+			function draw(e) {
+				const { x, y } = getCoordinates(e);
+				const id = ctx.getImageData(x, y, 1, 1);
+				if (id.data.slice(0, 3).every((a) => a == 0)) {
+					ctx.fillStyle = `rgba(255,255,255)`;
+				} else {
+					ctx.fillStyle = `rgba(0,0,0)`;
+				}
+				ctx.fillRect(x, y, 1, 1);
+				lastX = x;
+				lastY = y;
+				updatePreviews();
+				updateUrlWithCanvasData();
+			}
+
+			function drawPreview(e) {
+				const { x, y } = getCoordinates(e);
+				const dp = document.getElementById("draw-preview");
+				dp.style.left = `${x * ZOOM}px`;
+				dp.style.top = `${y * ZOOM}px`;
+			}
+
+			canvas.addEventListener("click", (e) => {
+				e.preventDefault();
+				draw(e);
+			});
+
+			canvas.addEventListener("pointermove", (e) => {
+				e.preventDefault();
+				drawPreview(e);
+			});
+
+			canvas.addEventListener("pointerleave", () => {
+				const dp = document.getElementById("draw-preview");
+				dp.style.opacity = 0;
+			});
+
+			canvas.addEventListener("pointerenter", () => {
+				const dp = document.getElementById("draw-preview");
+				dp.style.opacity = 1;
+			});
+
+			const gridToggle = document.getElementById("grid-toggle");
+			gridToggle.addEventListener("change", function () {
+				isGridEnabled = this.checked;
+				drawGrid();
+				if (isGridEnabled) {
+					gridCanvas.style.display = "block";
+				} else {
+					gridCanvas.style.display = "none";
+				}
+			});
+
+			const clearButton = document.getElementById("clear-button");
+			clearButton.addEventListener("click", function () {
+				const size = canvas.width;
+				ctx.fillStyle = `rgba(255,255,255)`;
+				ctx.fillRect(0, 0, size, size);
+				updatePreviews();
+				updateUrlWithCanvasData();
+			});
+			function average(...array) {
+				return array.reduce((acc, cur) => acc + cur, 0) / array.length;
+			}
+			function imgdata() {
+				let num = 0n;
+				const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+				const ln = data.length / 4;
+				for (let i = 0; i < ln; i++) {
+					const avg = average(
+						data[i * 4 + 0],
+						data[i * 4 + 1],
+						data[i * 4 + 2],
+					);
+					if (avg > 127 || data[i * 4 + 1] == 255) {
+						num = (num << 1n) + 1n;
+					} else {
+						num = num << 1n;
+					}
+				}
+				return `${canvas.width}-${canvas.height}-` + num;
+			}
+			try {
+				if (dataParam) {
+					if (dataParam.startsWith("data:image")) {
+						const img = new Image();
+						img.onload = () => {
+							createNewCanvas(img.width, img.height);
+							ctx.drawImage(img, 0, 0);
+							updateUrlWithCanvasData();
+							location.reload();
+						};
+						img.onerror = () => {
+							console.error(
+								"URLデータのデコードに失敗しました。無効な画像データです。",
+							);
+							createNewCanvas(16, 16);
+						};
+						img.src = dataParam;
+					} else {
+						const datas = dataParam.split("-");
+						const width = Number(datas[0]),
+							height = Number(datas[1]);
+						createNewCanvas(width, height);
+						let num = BigInt(datas[2]);
+						for (let i = width * height - 1; i >= 0; i--) {
+							if (num % 2n) {
+								ctx.fillStyle = `rgba(255,255,255)`;
+							} else {
+								ctx.fillStyle = `rgba(0,0,0)`;
+							}
+							ctx.fillRect(i % width, Math.floor(i / width), 1, 1);
+							num = num >> 1n;
+						}
+					}
+					updatePreviews();
+					updateUrlWithCanvasData();
+				} else {
+					createNewCanvas(16, 16);
+				}
+			} catch (e) {
+				console.error(e);
+				createNewCanvas(16, 16);
+			}
+		</script>
+	</body>
+</html>
