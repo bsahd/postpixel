@@ -63,7 +63,7 @@
 				</select>
 				<input type="checkbox" id="grid-toggle" checked />
 				<label for="grid-toggle">グリッド表示</label>
-				<button type="button" id="clear-button">clear</button>
+				<button type="button" id="clear-button">全消去</button>
 				<input type="file" id="file-input" accept="image/*" />
 			</div>
 			<div id="editor-column">
@@ -278,7 +278,7 @@
 				ctx.fillStyle = `rgba(255,255,255)`;
 				ctx.fillRect(0, 0, size, size);
 				updatePreviews();
-				updateUrlWithCanvasData();
+				updateUrlWithCanvasData(true);
 			});
 			function average(...array) {
 				return array.reduce((acc, cur) => acc + cur, 0) / array.length;
