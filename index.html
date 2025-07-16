@@ -150,13 +150,17 @@
 				}
 			}
 
-			function updateUrlWithCanvasData() {
+			function updateUrlWithCanvasData(reload) {
 				try {
 					const dataURL = imgdata();
 					const newUrl = `${window.location.pathname}?data=${encodeURIComponent(
 						dataURL,
 					)}`;
-					history.replaceState({ path: newUrl }, "", newUrl);
+					if (reload) {
+						location.href = newUrl;
+					} else {
+						history.replaceState({ path: newUrl }, "", newUrl);
+					}
 				} catch (e) {
 					console.error("URLの更新に失敗しました。", e);
 				}
@@ -187,23 +191,19 @@
 				drawGrid();
 			}
 
-			resolutionSelect.addEventListener("change", function () {
-				if (window.confirm("キャンバスを再作成しますか?内容は失われます")) {
-					const selectedValue = this.value;
-					const parts = selectedValue.split("x");
-					const newWidth = parseInt(parts[0], 10);
-					const newHeight = parseInt(parts[1], 10);
-					createNewCanvas(newWidth, newHeight);
-				} else {
-					const loadedResolutionValue = `${canvas.width}x${canvas.height}`;
-					if (
-						Array.from(resolutionSelect.options).some(
-							(option) => option.value === loadedResolutionValue,
-						)
-					) {
-						resolutionSelect.value = loadedResolutionValue;
-					}
-				}
+			resolutionSelect.addEventListener("change", async function () {
+				const selectedValue = this.value;
+				const parts = selectedValue.split("x");
+				const newWidth = parseInt(parts[0], 10);
+				const newHeight = parseInt(parts[1], 10);
+				const id = await createImageBitmap(
+					ctx.getImageData(0, 0, canvas.width, canvas.height),
+				);
+				createNewCanvas(newWidth, newHeight);
+				ctx.imageSmoothingEnabled = false;
+				ctx.drawImage(id, 0, 0, canvas.width, canvas.height);
+				updatePreviews();
+				updateUrlWithCanvasData(true); // 戻るボタンで戻れる
 			});
 
 			let lastX = -1,
@@ -324,8 +324,7 @@
 							createNewCanvas(img.width, img.height);
 							ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 							updatePreviews();
-							updateUrlWithCanvasData();
-							location.reload();
+							updateUrlWithCanvasData(true); // 戻るボタンで戻れる
 						}
 					};
 					img.onerror = () => {
@@ -343,8 +342,7 @@
 						img.onload = () => {
 							createNewCanvas(img.width, img.height);
 							ctx.drawImage(img, 0, 0);
-							updateUrlWithCanvasData();
-							location.reload();
+							updateUrlWithCanvasData(true); // 戻るボタンで戻れる
 						};
 						img.onerror = () => {
 							console.error(
