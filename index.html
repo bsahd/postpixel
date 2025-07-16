@@ -59,12 +59,12 @@
 					<option value="88x31">88x31</option>
 					<option value="64x16">64x16</option>
 					<option value="128x64">128x64</option>
+					<option value="128x128">128x128</option>
 				</select>
 				<input type="checkbox" id="grid-toggle" checked />
 				<label for="grid-toggle">グリッド表示</label>
 				<button type="button" id="clear-button">clear</button>
 				<input type="file" id="file-input" accept="image/*" />
-				<label for="file-input">ファイルから読み込む</label>
 			</div>
 			<div id="editor-column">
 				<canvas id="pixel-canvas"></canvas>
@@ -162,7 +162,9 @@
 				}
 			}
 
-			function createNewCanvas(width, height) {
+			function createNewCanvas(width_, height_) {
+				const width = width_ > 128 ? 128 : width_;
+				const height = height_ > 128 ? 128 : height_;
 				canvas.width = width;
 				canvas.height = height;
 				canvas.style.width = width * ZOOM + "px";
@@ -284,12 +286,12 @@
 				const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 				const ln = data.length / 4;
 				for (let i = 0; i < ln; i++) {
-					const avg = average(
-						data[i * 4 + 0],
-						data[i * 4 + 1],
-						data[i * 4 + 2],
-					);
-					if (avg > 127 || data[i * 4 + 1] == 255) {
+					const luminance =
+						0.2126 * data[i * 4 + 0] +
+						0.7152 * data[i * 4 + 1] +
+						0.0722 * data[i * 4 + 2];
+
+					if (luminance > 127) {
 						num = (num << 1n) + 1n;
 					} else {
 						num = num << 1n;
@@ -314,16 +316,16 @@
 				reader.onload = function (e) {
 					const img = new Image();
 					img.onload = () => {
-						// Confirm with the user before overwriting
 						if (
 							window.confirm(
 								"選択した画像をキャンバスに読み込みますか？現在の内容は失われます。",
 							)
 						) {
-							createNewCanvas(img.width, img.height); // Set canvas to image dimensions
-							ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Draw image, scaling if necessary
+							createNewCanvas(img.width, img.height);
+							ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 							updatePreviews();
 							updateUrlWithCanvasData();
+							location.reload();
 						}
 					};
 					img.onerror = () => {
