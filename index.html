@@ -63,6 +63,8 @@
 				<input type="checkbox" id="grid-toggle" checked />
 				<label for="grid-toggle">グリッド表示</label>
 				<button type="button" id="clear-button">clear</button>
+				<input type="file" id="file-input" accept="image/*" />
+				<label for="file-input">ファイルから読み込む</label>
 			</div>
 			<div id="editor-column">
 				<canvas id="pixel-canvas"></canvas>
@@ -295,6 +297,43 @@
 				}
 				return `${canvas.width}-${canvas.height}-` + num;
 			}
+			const fileInput = document.getElementById("file-input");
+
+			fileInput.addEventListener("change", function (event) {
+				const file = event.target.files[0];
+				if (!file) {
+					return;
+				}
+
+				if (!file.type.startsWith("image/")) {
+					alert("画像ファイルを選択してください。");
+					return;
+				}
+
+				const reader = new FileReader();
+				reader.onload = function (e) {
+					const img = new Image();
+					img.onload = () => {
+						// Confirm with the user before overwriting
+						if (
+							window.confirm(
+								"選択した画像をキャンバスに読み込みますか？現在の内容は失われます。",
+							)
+						) {
+							createNewCanvas(img.width, img.height); // Set canvas to image dimensions
+							ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Draw image, scaling if necessary
+							updatePreviews();
+							updateUrlWithCanvasData();
+						}
+					};
+					img.onerror = () => {
+						alert("画像の読み込みに失敗しました。");
+					};
+					img.src = e.target.result;
+				};
+				reader.readAsDataURL(file);
+			});
+
 			try {
 				if (dataParam) {
 					if (dataParam.startsWith("data:image")) {
