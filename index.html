@@ -58,8 +58,7 @@
 					<option value="64x64">64x64</option>
 					<option value="88x31">88x31</option>
 					<option value="64x16">64x16</option>
-					<option value="128x64">128x64</option>
-					<option value="128x128">128x128</option>
+					<option value="96x96">96x96</option>
 				</select>
 				<input type="checkbox" id="grid-toggle" checked />
 				<label for="grid-toggle">グリッド表示</label>
@@ -167,8 +166,16 @@
 			}
 
 			function createNewCanvas(width_, height_, keepURL) {
-				const width = width_ > 128 ? 128 : width_;
-				const height = height_ > 128 ? 128 : height_;
+				let width = width_;
+				let height = height_;
+				if (width > 96) {
+					height = height / (width / 96);
+					width = 96;
+				}
+				if (height > 96) {
+					width = width / (height / 96);
+					height = 96;
+				}
 				canvas.width = width;
 				canvas.height = height;
 				canvas.style.width = width * ZOOM + "px";
