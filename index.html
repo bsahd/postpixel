@@ -166,7 +166,7 @@
 				}
 			}
 
-			function createNewCanvas(width_, height_) {
+			function createNewCanvas(width_, height_, keepURL) {
 				const width = width_ > 128 ? 128 : width_;
 				const height = height_ > 128 ? 128 : height_;
 				canvas.width = width;
@@ -187,7 +187,9 @@
 					resolutionSelect.value = "16x16";
 				}
 				updatePreviews();
-				updateUrlWithCanvasData();
+				if (!keepURL) {
+					updateUrlWithCanvasData();
+				}
 				drawGrid();
 			}
 
@@ -199,7 +201,7 @@
 				const id = await createImageBitmap(
 					ctx.getImageData(0, 0, canvas.width, canvas.height),
 				);
-				createNewCanvas(newWidth, newHeight);
+				createNewCanvas(newWidth, newHeight, true);
 				ctx.imageSmoothingEnabled = false;
 				ctx.drawImage(id, 0, 0, canvas.width, canvas.height);
 				updatePreviews();
@@ -321,7 +323,7 @@
 								"選択した画像をキャンバスに読み込みますか？現在の内容は失われます。",
 							)
 						) {
-							createNewCanvas(img.width, img.height);
+							createNewCanvas(img.width, img.height, true);
 							ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 							updatePreviews();
 							updateUrlWithCanvasData(true); // 戻るボタンで戻れる
@@ -340,7 +342,7 @@
 					if (dataParam.startsWith("data:image")) {
 						const img = new Image();
 						img.onload = () => {
-							createNewCanvas(img.width, img.height);
+							createNewCanvas(img.width, img.height, true);
 							ctx.drawImage(img, 0, 0);
 							updateUrlWithCanvasData(true); // 戻るボタンで戻れる
 						};
