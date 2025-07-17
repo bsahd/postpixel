@@ -372,7 +372,7 @@ try {
 					blockIndex++;
 					for (let bitIndex = 0; bitIndex < 32; bitIndex++) {
 						const currentPixelX = x + bitIndex;
-						const bsize = x + 32 >= width ? width - x - 1 : 32;
+						const bsize = Math.max(width - x - 1, 31);
 						if (currentPixelX >= width) {
 							break;
 						}
