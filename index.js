@@ -270,22 +270,31 @@ clearButton.addEventListener("click", function () {
 });
 
 function imgdata() {
-	let num = 0n;
-	const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-	const ln = data.length / 4;
-	for (let i = 0; i < ln; i++) {
-		const luminance =
-			0.2126 * data[i * 4 + 0] +
-			0.7152 * data[i * 4 + 1] +
-			0.0722 * data[i * 4 + 2];
+	const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+	const data = imageData.data;
+	const width = canvas.width;
+	const height = canvas.height;
+	const blocks = [];
 
-		if (luminance > 127) {
-			num = (num << 1n) + 1n;
-		} else {
-			num = num << 1n;
+	for (let y = 0; y < height; y++) {
+		for (let x = 0; x < width; x += 32) {
+			let blocknum = 0;
+			for (let bitIndex = 0; bitIndex < 32; bitIndex++) {
+				const currentPixelX = x + bitIndex;
+				if (currentPixelX >= width) {
+					break;
+				}
+				const dataIndex = (y * width + currentPixelX) * 4;
+				const r = data[dataIndex];
+				const g = data[dataIndex + 1];
+				const b = data[dataIndex + 2];
+				const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+				blocknum = (blocknum << 1) | (luminance > 127 ? 1 : 0);
+			}
+			blocks.push(blocknum >>> 0);
 		}
 	}
-	return `${canvas.width}-${canvas.height}-` + num;
+	return `${width}-${height}-` + blocks.join("-");
 }
 openImage.addEventListener("click", function () {
 	canvas.toBlob((blob) => {
@@ -351,19 +360,33 @@ try {
 			};
 			img.src = dataParam;
 		} else {
-			const datas = dataParam.split("-");
-			const width = Number(datas[0]),
-				height = Number(datas[1]);
+			const datas = dataParam.split("-").map((a) => Number(a));
+			const width = datas[0];
+			const height = datas[1];
+			const encodedBlocks = datas.slice(2);
 			createNewCanvas(width, height);
-			let num = BigInt(datas[2]);
-			for (let i = width * height - 1; i >= 0; i--) {
-				if (num % 2n) {
-					ctx.fillStyle = `rgba(255,255,255)`;
-				} else {
-					ctx.fillStyle = `rgba(0,0,0)`;
+			let blockIndex = 0;
+			for (let y = 0; y < height; y++) {
+				for (let x = 0; x < width; x += 32) {
+					const currentBlockValue = encodedBlocks[blockIndex] >>> 0;
+					blockIndex++;
+					for (let bitIndex = 0; bitIndex < 32; bitIndex++) {
+						const currentPixelX = x + bitIndex;
+						const bsize = x + 32 >= width ? width - x - 1 : 32;
+						if (currentPixelX >= width) {
+							break;
+						}
+						const pixelIsWhite =
+							((currentBlockValue >> (bsize - bitIndex)) & 1) === 1;
+
+						if (pixelIsWhite) {
+							ctx.fillStyle = `rgba(255,255,255)`;
+						} else {
+							ctx.fillStyle = `rgba(0,0,0)`;
+						}
+						ctx.fillRect(currentPixelX, y, 1, 1);
+					}
 				}
-				ctx.fillRect(i % width, Math.floor(i / width), 1, 1);
-				num = num >> 1n;
 			}
 		}
 		updatePreviews();
@@ -375,3 +398,7 @@ try {
 	console.error(e);
 	createNewCanvas(16, 16);
 }
+
+// @ts-ignore
+document.getElementById("main").style.display = "block";
+document.getElementById("loading")?.remove();
