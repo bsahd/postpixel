@@ -360,11 +360,11 @@ try {
           blockIndex++;
           for (let bitIndex = 0; bitIndex < 32; bitIndex++) {
             const currentPixelX = x + bitIndex;
-            const bsize = Math.max(width - x - 1, 31);
+            const bsize = Math.min(width - x - 1, 31);
             if (currentPixelX >= width) {
               break;
             }
-            const pixelIsWhite = ((currentBlockValue >> (bsize - bitIndex)) & 1) === 1;
+            const pixelIsWhite = ((currentBlockValue >> (bsize - bitIndex)) & 1) !== 0;
 
             if (pixelIsWhite) {
               ctx.fillStyle = `rgba(255,255,255)`;
