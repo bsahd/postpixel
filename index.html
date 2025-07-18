@@ -1,90 +1,86 @@
 <!doctype html>
 <html lang="ja">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>PostPixel</title>
-		<style>
-			h1 {
-				margin-bottom: 10px;
-				font-weight: normal;
-				font-size: 2.5em;
-			}
-			.message {
-				height: 1.5em;
-				font-size: 1.2em;
-			}
-			#controls {
-				margin-top: 10px;
-				margin-bottom: 20px;
-			}
-			#editor-column {
-				position: relative;
-			}
-			canvas {
-				border: 1px solid #1a1a1a;
-				image-rendering: pixelated;
-			}
-			#grid-canvas {
-				position: absolute;
-				top: 0;
-				left: 0;
-				background-color: transparent;
-				pointer-events: none;
-			}
-			#draw-preview {
-				width: 14px;
-				height: 14px;
-				position: absolute;
-				pointer-events: none;
-				border: 2px solid #08f;
-			}
-			main{
-				display: none;
-			}
-		</style>
-	</head>
-	<body>
-		<h1>PostPixel</h1>
-		<div id="message-container">
-			<p class="message">編集内容はURLに自動で反映されます</p>
-		</div>
-		<p id="loading">読み込み中...</p>
-		<main id="main">
-			<div id="controls">
-				<label for="resolution-select">解像度:</label>
-				<select id="resolution-select">
-					<option value="8x8">8x8</option>
-					<option value="16x16">16x16</option>
-					<option value="24x24">24x24</option>
-					<option value="32x32">32x32</option>
-					<option value="48x48">48x48</option>
-					<option value="64x64">64x64</option>
-					<option value="88x31">88x31</option>
-					<option value="64x16">64x16</option>
-					<option value="96x96">96x96</option>
-				</select>
-				<input type="checkbox" id="grid-toggle" checked />
-				<label for="grid-toggle">グリッド表示</label>
-				<button type="button" id="clear-button">全消去</button>
-				<input type="file" id="file-input" accept="image/*" />
-				<button type="button" id="open-image">画像を別窓で開く</button>
-			</div>
-			<div id="editor-column">
-				<canvas id="pixel-canvas"></canvas>
-				<canvas id="grid-canvas"></canvas>
-				<div id="draw-preview"></div>
-			</div>
-			<div id="preview-column">
-				<div class="preview-box">
-					<label>1x</label> <canvas id="preview-1x"></canvas>
-				</div>
-				<div class="preview-box">
-					<label>2x</label> <canvas id="preview-2x"></canvas>
-				</div>
-			</div>
-		</main>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PostPixel</title>
+    <style>
+      h1 {
+        margin-bottom: 10px;
+        font-weight: normal;
+        font-size: 2.5em;
+      }
+      .message {
+        height: 1.5em;
+        font-size: 1.2em;
+      }
+      #controls {
+        margin-top: 10px;
+        margin-bottom: 20px;
+      }
+      #editor-column {
+        position: relative;
+      }
+      canvas {
+        border: 1px solid #1a1a1a;
+        image-rendering: pixelated;
+      }
+      #grid-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: transparent;
+        pointer-events: none;
+      }
+      #draw-preview {
+        width: 14px;
+        height: 14px;
+        position: absolute;
+        pointer-events: none;
+        border: 2px solid #08f;
+      }
+      main {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PostPixel</h1>
+    <div id="message-container">
+      <p class="message">編集内容はURLに自動で反映されます</p>
+    </div>
+    <p id="loading">読み込み中...</p>
+    <main id="main">
+      <div id="controls">
+        <label for="resolution-select">解像度:</label>
+        <select id="resolution-select">
+          <option value="8x8">8x8</option>
+          <option value="16x16">16x16</option>
+          <option value="24x24">24x24</option>
+          <option value="32x32">32x32</option>
+          <option value="48x48">48x48</option>
+          <option value="64x64">64x64</option>
+          <option value="88x31">88x31</option>
+          <option value="64x16">64x16</option>
+          <option value="96x96">96x96</option>
+        </select>
+        <input type="checkbox" id="grid-toggle" checked />
+        <label for="grid-toggle">グリッド表示</label>
+        <button type="button" id="clear-button">全消去</button>
+        <input type="file" id="file-input" accept="image/*" />
+        <button type="button" id="open-image">画像を別窓で開く</button>
+      </div>
+      <div id="editor-column">
+        <canvas id="pixel-canvas"></canvas>
+        <canvas id="grid-canvas"></canvas>
+        <div id="draw-preview"></div>
+      </div>
+      <div id="preview-column">
+        <div class="preview-box"><label>1x</label> <canvas id="preview-1x"></canvas></div>
+        <div class="preview-box"><label>2x</label> <canvas id="preview-2x"></canvas></div>
+      </div>
+    </main>
 
-		<script src="index.js"></script>
-	</body>
+    <script src="index.js"></script>
+  </body>
 </html>
